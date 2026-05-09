@@ -51,6 +51,6 @@ if (import.meta.env.MODE === 'mocked') {
   worker.start().then(() => {
     return renderApp();
   });
+} else {
+  renderApp();
 }
-
-renderApp();
