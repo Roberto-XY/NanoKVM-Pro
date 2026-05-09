@@ -4,7 +4,6 @@ import clsx from 'clsx';
 import { useAtom } from 'jotai';
 import { XIcon } from 'lucide-react';
 import Keyboard, { KeyboardButtonTheme } from 'react-simple-keyboard';
-import { Drawer } from 'vaul';
 
 import 'react-simple-keyboard/build/css/index.css';
 import '@/assets/styles/keyboard.css';
@@ -27,7 +26,7 @@ import {
 } from './virtual-keys.ts';
 
 export const VirtualKeyboard = () => {
-  const isBigScreen = useMediaQuery({ minWidth: 850 });
+  const showControlPad = useMediaQuery({ minWidth: 600 });
 
   const [isKeyboardOpen, setIsKeyboardOpen] = useAtom(isKeyboardOpenAtom);
 
@@ -198,16 +197,9 @@ export const VirtualKeyboard = () => {
   }
 
   return (
-    <Drawer.Root open={isKeyboardOpen} onOpenChange={setIsKeyboardOpen} modal={false}>
-      <Drawer.Portal>
-        <Drawer.Content
-          className={clsx(
-            'fixed bottom-0 left-0 right-0 z-[999] mx-auto overflow-hidden rounded bg-white outline-none',
-            isBigScreen ? 'w-[820px]' : 'w-[650px]'
-          )}
-        >
-          <Drawer.Title className="m-0">
-            <div className="flex items-center justify-between px-3 py-2">
+    <div className={clsx('w-full overflow-hidden bg-white shadow-[0_-2px_8px_rgba(0,0,0,0.12)]', !isKeyboardOpen && 'hidden')}>
+      <div className="mx-auto w-full max-w-[820px]">
+        <div className="flex items-center justify-between px-3 py-2">
               <ConfigProvider
                 theme={{
                   algorithm: theme.defaultAlgorithm
@@ -242,11 +234,10 @@ export const VirtualKeyboard = () => {
                 </div>
               </div>
             </div>
-          </Drawer.Title>
 
           <div className="h-px flex-shrink-0 border-b bg-neutral-300" />
 
-          <div data-vaul-no-drag className="keyboardContainer w-full">
+          <div className="keyboardContainer w-full">
             {/* main keyboard */}
             <Keyboard
               buttonTheme={getButtonTheme()}
@@ -258,7 +249,7 @@ export const VirtualKeyboard = () => {
             />
 
             {/* control keyboard */}
-            {isBigScreen && (
+            {showControlPad && (
               <div className="controlArrows">
                 <Keyboard
                   onKeyPress={onKeyPress}
@@ -274,9 +265,7 @@ export const VirtualKeyboard = () => {
               </div>
             )}
           </div>
-        </Drawer.Content>
-        <Drawer.Overlay />
-      </Drawer.Portal>
-    </Drawer.Root>
+        </div>
+      </div>
   );
 };

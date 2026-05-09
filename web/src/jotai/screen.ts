@@ -10,7 +10,9 @@ export const videoParametersAtom = atom<VideoParameters>({
   gop: 50, // 1 - 200
   fps: 0, // 0 - 120
   scale: 1,
-  quality: 80 // 1-100 (only for mjpeg)
+  quality: 80, // 1-100 (only for mjpeg)
+  panX: 0,
+  panY: 0
 });
 
 export const videoStatusAtom = atom<VideoStatus>(VideoStatus.Normal);

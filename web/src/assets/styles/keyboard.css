@@ -11,8 +11,8 @@
 }
 
 .simple-keyboard-main.simple-keyboard {
-  width: 640px;
-  min-width: 640px;
+  width: 100%;
+  min-width: unset;
   background: none;
 }
 
@@ -86,11 +86,13 @@
 }
 
 .hg-button.hg-functionBtn.hg-button-space {
-  width: 250px;
+  flex: 4;
+  min-width: 0;
 }
 
 .hg-layout-mac .hg-button.hg-functionBtn.hg-button-space {
-  width: 350px;
+  flex: 6;
+  min-width: 0;
 }
 
 .simple-keyboard .hg-highlight {

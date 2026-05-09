@@ -47,7 +47,7 @@ export const Desktop = () => {
   }
 
   return (
-    <>
+    <div className="flex h-dvh flex-col overflow-hidden">
       <Head title={t('head.desktop')} />
 
       {isBigScreen && (
@@ -58,15 +58,15 @@ export const Desktop = () => {
       )}
 
       {videoMode && (
-        <>
+        <div className="relative flex-1 min-h-0">
           <Menu />
           <Screen />
           <Mouse />
           <Keyboard />
-        </>
+        </div>
       )}
 
       <VirtualKeyboard />
-    </>
+    </div>
   );
 };

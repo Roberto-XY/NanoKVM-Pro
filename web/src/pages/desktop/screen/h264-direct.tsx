@@ -53,8 +53,11 @@ export const H264Direct = () => {
     };
   }, []);
 
+  const panX = videoParameters.panX ?? 0;
+  const panY = videoParameters.panY ?? 0;
+
   return (
-    <div className="flex h-screen w-screen items-start justify-center xl:items-center">
+    <div className="flex h-full w-full items-center justify-center overflow-hidden">
       <canvas
         id="screen"
         ref={canvasRef}
@@ -62,7 +65,7 @@ export const H264Direct = () => {
           'block min-h-[50vh] min-w-[50vw] max-w-full select-none object-scale-down',
           mouseStyle
         )}
-        style={{ transform: `scale(${videoParameters.scale})` }}
+        style={{ transform: `translate(${panX}px, ${panY}px) scale(${videoParameters.scale})` }}
       ></canvas>
     </div>
   );

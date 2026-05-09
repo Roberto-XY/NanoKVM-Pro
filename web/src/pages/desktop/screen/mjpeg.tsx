@@ -11,15 +11,18 @@ export const Mjpeg = () => {
   const videoParameters = useAtomValue(videoParametersAtom);
   const mouseStyle = useAtomValue(mouseStyleAtom);
 
+  const panX = videoParameters.panX ?? 0;
+  const panY = videoParameters.panY ?? 0;
+
   return (
-    <div className="flex h-screen w-screen items-start justify-center xl:items-center">
+    <div className="flex h-full w-full items-center justify-center overflow-hidden">
       <Image
         id="screen"
         className={clsx(
-          'block max-h-screen min-h-[50vh] min-w-[50vw] select-none object-scale-down',
+          'block max-h-full min-h-[50vh] min-w-[50vw] select-none object-scale-down',
           mouseStyle
         )}
-        style={{ transform: `scale(${videoParameters.scale})` }}
+        style={{ transform: `translate(${panX}px, ${panY}px) scale(${videoParameters.scale})` }}
         src={`${getBaseUrl('http')}/api/stream/mjpeg`}
         fallback={MonitorXIcon}
         preview={false}

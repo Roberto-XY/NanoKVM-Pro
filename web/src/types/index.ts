@@ -7,6 +7,8 @@ export interface VideoParameters {
   fps: number;
   scale: number;
   quality?: number; // MJEPG only
+  panX?: number;
+  panY?: number;
 }
 
 export enum VideoStatus {

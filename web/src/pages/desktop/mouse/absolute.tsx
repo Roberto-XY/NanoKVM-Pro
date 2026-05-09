@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { useAtomValue } from 'jotai';
-import { useMediaQuery } from 'react-responsive';
+import { useAtomValue, useSetAtom } from 'jotai';
 
 import { MouseReportAbsolute } from '@/lib/mouse.ts';
 import { client, MessageEvent } from '@/lib/websocket.ts';
 import { scrollDirectionAtom, scrollIntervalAtom } from '@/jotai/mouse.ts';
+import { videoParametersAtom } from '@/jotai/screen.ts';
 
 import { MouseAbsoluteEvent } from './types.ts';
 
@@ -17,16 +17,16 @@ enum MouseButton {
 }
 
 export const Absolute = () => {
-  const isBigScreen = useMediaQuery({ minWidth: 650 });
-
   const scrollDirection = useAtomValue(scrollDirectionAtom);
   const scrollInterval = useAtomValue(scrollIntervalAtom);
+  const setVideoParameters = useSetAtom(videoParametersAtom);
+  const currentVideoParams = useAtomValue(videoParametersAtom);
 
   const mouseRef = useRef(new MouseReportAbsolute());
   const lastPosRef = useRef({ x: 0.5, y: 0.5 });
   const lastScrollTimeRef = useRef(0);
 
-  // For touch events
+  // Single-touch state
   const touchStartTimeRef = useRef(0);
   const lastTouchYRef = useRef(0);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -35,6 +35,21 @@ export const Absolute = () => {
   const isDraggingRef = useRef(false);
   const pressedButtonRef = useRef<MouseButton | null>(null);
   const touchStartPosRef = useRef({ x: 0, y: 0 });
+
+  // Pinch-to-zoom state
+  const isPinchingRef = useRef(false);
+  const pinchStartDistRef = useRef(0);
+  const pinchStartScaleRef = useRef(1);
+  const pinchStartMidRef = useRef({ x: 0, y: 0 });
+  const pinchStartPanRef = useRef({ x: 0, y: 0 });
+
+  // Mirror atom values into a ref so handlers can read them without being in effect deps
+  const videoParamsRef = useRef({ scale: 1, panX: 0, panY: 0 });
+  videoParamsRef.current = {
+    scale: currentVideoParams.scale,
+    panX: currentVideoParams.panX ?? 0,
+    panY: currentVideoParams.panY ?? 0
+  };
 
   const TAP_THRESHOLD = 8;
   const DRAG_THRESHOLD = 10;
@@ -50,67 +65,84 @@ export const Absolute = () => {
     screen.addEventListener('wheel', handleWheel);
     screen.addEventListener('click', disableEvent);
     screen.addEventListener('contextmenu', disableEvent);
+    screen.addEventListener('touchstart', handleTouchStart, { passive: false });
+    screen.addEventListener('touchmove', handleTouchMove, { passive: false });
+    screen.addEventListener('touchend', handleTouchEnd, { passive: false });
+    screen.addEventListener('touchcancel', handleTouchCancel, { passive: false });
 
-    if (isBigScreen) {
-      screen.addEventListener('touchstart', handleTouchStart);
-      screen.addEventListener('touchmove', handleTouchMove);
-      screen.addEventListener('touchend', handleTouchEnd);
-      screen.addEventListener('touchcancel', handleTouchCancel);
-    }
-
-    // Mouse down event
     function handleMouseDown(e: MouseEvent) {
       disableEvent(e);
       handleMouseEvent({ type: 'mousedown', button: e.button });
     }
 
-    // Mouse up event
     function handleMouseUp(e: MouseEvent) {
       disableEvent(e);
       handleMouseEvent({ type: 'mouseup', button: e.button });
     }
 
-    // Mouse move event
     function handleMouseMove(e: MouseEvent) {
       disableEvent(e);
       const { x, y } = getCoordinate(e);
       handleMouseEvent({ type: 'move', x, y });
     }
 
-    // Mouse wheel event
     function handleWheel(e: WheelEvent) {
       disableEvent(e);
 
-      if (Math.floor(e.deltaY) === 0) {
-        return;
-      }
+      if (Math.floor(e.deltaY) === 0) return;
 
       const currentTime = Date.now();
-      if (currentTime - lastScrollTimeRef.current < scrollInterval) {
-        return;
-      }
+      if (currentTime - lastScrollTimeRef.current < scrollInterval) return;
 
       const deltaY = (e.deltaY > 0 ? 1 : -1) * scrollDirection;
       handleMouseEvent({ type: 'wheel', deltaY });
       lastScrollTimeRef.current = currentTime;
     }
 
-    // Mouse touch start event
     function handleTouchStart(e: TouchEvent) {
       disableEvent(e);
 
-      if (e.touches.length === 0) {
+      if (e.touches.length === 0) return;
+
+      // Second (or more) finger joined — start or update pinch
+      if (e.touches.length >= 2) {
+        if (longPressTimerRef.current) {
+          clearTimeout(longPressTimerRef.current);
+          longPressTimerRef.current = null;
+        }
+
+        // Release any active single-touch drag
+        if (isDraggingRef.current && pressedButtonRef.current !== null) {
+          handleMouseEvent({ type: 'mouseup', button: pressedButtonRef.current });
+        }
+        isDraggingRef.current = false;
+        pressedButtonRef.current = null;
+
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        pinchStartDistRef.current = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        pinchStartScaleRef.current = videoParamsRef.current.scale;
+        pinchStartMidRef.current = {
+          x: (t1.clientX + t2.clientX) / 2,
+          y: (t1.clientY + t2.clientY) / 2
+        };
+        pinchStartPanRef.current = {
+          x: videoParamsRef.current.panX,
+          y: videoParamsRef.current.panY
+        };
+        isPinchingRef.current = true;
         return;
       }
 
+      // Single touch
       const touch = e.touches[0];
 
-      // Reset states
       touchStartTimeRef.current = Date.now();
       lastTouchYRef.current = touch.clientY;
       isLongPressRef.current = false;
       hasMoveRef.current = false;
       isDraggingRef.current = false;
+      isPinchingRef.current = false;
       pressedButtonRef.current = null;
       touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
 
@@ -121,46 +153,53 @@ export const Absolute = () => {
       const { x, y } = getCoordinate(touch);
       handleMouseEvent({ type: 'move', x, y });
 
-      if (e.touches.length > 1) {
-        return;
-      }
-
-      // Start long press
       longPressTimerRef.current = setTimeout(() => {
         isLongPressRef.current = true;
         pressedButtonRef.current = MouseButton.Right;
-        if (navigator.vibrate) {
-          navigator.vibrate(50);
-        }
-
+        if (navigator.vibrate) navigator.vibrate(50);
         handleMouseEvent({ type: 'mousedown', button: MouseButton.Right });
       }, 800);
     }
 
-    // Mouse touch move event
     function handleTouchMove(e: TouchEvent) {
       disableEvent(e);
 
-      if (e.touches.length === 0) {
+      if (e.touches.length === 0) return;
+
+      // Two-finger: pinch zoom + pan
+      if (e.touches.length >= 2) {
+        isPinchingRef.current = true;
+
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+
+        const currentDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        const currentMidX = (t1.clientX + t2.clientX) / 2;
+        const currentMidY = (t1.clientY + t2.clientY) / 2;
+
+        const S0 = pinchStartScaleRef.current;
+        const ratio = currentDist / pinchStartDistRef.current;
+        const S1 = Math.max(0.5, Math.min(4, S0 * ratio));
+
+        // Keep the pinch origin fixed: the content point at the initial midpoint
+        // should remain at the current midpoint after the transform changes.
+        // Formula: tx1 = M_x - halfW - (M0_x - halfW - tx0) * S1/S0
+        const halfW = window.innerWidth / 2;
+        const halfH = window.innerHeight / 2;
+        const scaleRatio = S1 / S0;
+        const tx1 =
+          currentMidX - halfW - (pinchStartMidRef.current.x - halfW - pinchStartPanRef.current.x) * scaleRatio;
+        const ty1 =
+          currentMidY - halfH - (pinchStartMidRef.current.y - halfH - pinchStartPanRef.current.y) * scaleRatio;
+
+        setVideoParameters((prev) => ({ ...prev, scale: S1, panX: tx1, panY: ty1 }));
         return;
       }
+
+      // Single touch — skip if we were just pinching
+      if (isPinchingRef.current) return;
+
       const touch = e.touches[0];
-
-      // Handle two-finger scroll first
-      if (e.touches.length > 1) {
-        const currentTime = Date.now();
-        if (currentTime - lastScrollTimeRef.current < scrollInterval) {
-          return;
-        }
-
-        const deltaY = (touch.clientY - lastTouchYRef.current > 0 ? 1 : -1) * scrollDirection;
-        handleMouseEvent({ type: 'wheel', deltaY });
-
-        lastTouchYRef.current = touch.clientY;
-        lastScrollTimeRef.current = currentTime;
-        return;
-      }
-
       const deltaX = Math.abs(touch.clientX - touchStartPosRef.current.x);
       const deltaY = Math.abs(touch.clientY - touchStartPosRef.current.y);
       const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
@@ -172,9 +211,7 @@ export const Absolute = () => {
         distance > DRAG_THRESHOLD || (distance > TAP_THRESHOLD && velocity > VELOCITY_THRESHOLD);
 
       if (shouldStartDrag && !isDraggingRef.current && !isLongPressRef.current) {
-        if (!hasMoveRef.current) {
-          hasMoveRef.current = true;
-        }
+        if (!hasMoveRef.current) hasMoveRef.current = true;
 
         if (longPressTimerRef.current) {
           clearTimeout(longPressTimerRef.current);
@@ -198,13 +235,25 @@ export const Absolute = () => {
       }
     }
 
-    // Mouse touch end event
     function handleTouchEnd(e: TouchEvent) {
       disableEvent(e);
 
       if (longPressTimerRef.current) {
         clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = null;
+      }
+
+      // Pinch: one finger remaining or all lifted
+      if (isPinchingRef.current) {
+        if (e.touches.length === 0) {
+          isPinchingRef.current = false;
+          // Snap back to scale 1 if close enough
+          const { scale } = videoParamsRef.current;
+          if (scale > 0.8 && scale < 1.1) {
+            setVideoParameters((prev) => ({ ...prev, scale: 1, panX: 0, panY: 0 }));
+          }
+        }
+        return;
       }
 
       if (!hasMoveRef.current && !isLongPressRef.current) {
@@ -222,13 +271,17 @@ export const Absolute = () => {
       pressedButtonRef.current = null;
     }
 
-    // Mouse touch cancel event
     function handleTouchCancel(e: any) {
       disableEvent(e);
 
       if (longPressTimerRef.current) {
         clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = null;
+      }
+
+      if (isPinchingRef.current) {
+        isPinchingRef.current = false;
+        return;
       }
 
       if (pressedButtonRef.current) {
@@ -241,7 +294,6 @@ export const Absolute = () => {
       pressedButtonRef.current = null;
     }
 
-    // get mouse coordinate
     function getCoordinate(event: any) {
       const { x, y } = getCorrectedCoords(event.clientX, event.clientY);
 
@@ -301,9 +353,8 @@ export const Absolute = () => {
         clearTimeout(longPressTimerRef.current);
       }
     };
-  }, [isBigScreen, scrollDirection, scrollInterval]);
+  }, [scrollDirection, scrollInterval, setVideoParameters]);
 
-  // Mouse event handler
   function handleMouseEvent(event: MouseAbsoluteEvent) {
     let report: Uint8Array;
     const mouse = mouseRef.current;
@@ -337,7 +388,6 @@ export const Absolute = () => {
     client.send(data);
   }
 
-  // disable default events
   function disableEvent(event: any) {
     event.preventDefault();
     event.stopPropagation();

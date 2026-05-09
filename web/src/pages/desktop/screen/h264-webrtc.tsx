@@ -366,31 +366,38 @@ export const H264Webrtc = () => {
     }
   }, [micEnabled, setMicEnabled]);
 
-  return (
-    <Spin size="large" tip="Loading" spinning={isLoading}>
-      <div className="flex h-screen w-screen items-start justify-center xl:items-center">
-        <video
-          id="screen"
-          ref={videoRef}
-          className={clsx(
-            'block max-h-full min-h-[50vh] min-w-[50vw] max-w-full select-none object-scale-down',
-            isPlaying ? 'opacity-100' : 'opacity-0',
-            mouseStyle
-          )}
-          style={{ transform: `scale(${videoParameters.scale})` }}
-          muted
-          autoPlay
-          playsInline
-          controls={false}
-          onPlaying={() => setIsLoading(false)}
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-          }}
-        />
+  const panX = videoParameters.panX ?? 0;
+  const panY = videoParameters.panY ?? 0;
 
-        <audio ref={audioRef} muted autoPlay playsInline />
-      </div>
-    </Spin>
+  return (
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
+      {isLoading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center">
+          <Spin size="large" tip="Loading" spinning />
+        </div>
+      )}
+
+      <video
+        id="screen"
+        ref={videoRef}
+        className={clsx(
+          'block max-h-full min-h-[50vh] min-w-[50vw] max-w-full select-none object-scale-down',
+          isPlaying ? 'opacity-100' : 'opacity-0',
+          mouseStyle
+        )}
+        style={{ transform: `translate(${panX}px, ${panY}px) scale(${videoParameters.scale})` }}
+        muted
+        autoPlay
+        playsInline
+        controls={false}
+        onPlaying={() => setIsLoading(false)}
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+        }}
+      />
+
+      <audio ref={audioRef} muted autoPlay playsInline />
+    </div>
   );
 };
