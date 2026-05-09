@@ -22,13 +22,12 @@ export const Fullscreen = () => {
     };
   }, []);
 
-  function handleFullscreen() {
+  async function handleFullscreen() {
     if (!document.fullscreenElement) {
-      const element = document.documentElement;
-      element.requestFullscreen();
+      await document.documentElement.requestFullscreen();
 
       // @ts-expect-error - https://developer.mozilla.org/en-US/docs/Web/API/Keyboard/lock
-      navigator.keyboard?.lock();
+      await navigator.keyboard?.lock();
     } else {
       document.exitFullscreen();
 
