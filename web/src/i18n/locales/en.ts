@@ -93,6 +93,7 @@ const en = {
       qualityMedium: 'Medium',
       qualityLow: 'Low',
       scale: 'Scale',
+      rotation: 'Rotation',
       resetHdmi: 'Reset HDMI',
       noSignal: 'HDMI no signal',
       inconsistentVideoMode: 'Play paused. Another video mode is playing.',
@@ -203,6 +204,8 @@ const en = {
       unmountFailed: 'Unmount failed',
       unmountDesc:
         'On some systems, you need to manually eject from the remote host before unmounting the image.',
+      checksum: 'Checksum',
+      checksumFailed: 'Checksum calculation failed, please try again',
       refresh: 'Refresh the image list',
       download: 'Download Image',
       attention: 'Attention',
@@ -378,6 +381,14 @@ const en = {
           600: '10 min',
           1800: '30 min',
           3600: '1 hour'
+        },
+        scheduledScreenOff: {
+          title: 'Scheduled Screen Off',
+          description: 'Turn the Desk screen off during a time range',
+          start: 'Start',
+          end: 'End',
+          invalidRange: 'Start and end times must be different.',
+          saveFailed: 'Unable to save the scheduled screen-off settings.'
         },
         wifi: {
           title: 'Wi-Fi',

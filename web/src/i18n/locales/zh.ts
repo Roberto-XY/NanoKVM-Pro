@@ -79,6 +79,7 @@ const zh = {
       qualityMedium: '中',
       qualityLow: '低',
       scale: '缩放',
+      rotation: '旋转',
       resetHdmi: '重置 HDMI',
       noSignal: 'HDMI 无信号',
       inconsistentVideoMode: '已暂停，其他视频模式正在播放中',
@@ -198,6 +199,8 @@ const zh = {
       mountDesc: '在某些系统中，需要在远程主机中弹出虚拟硬盘后再挂载镜像。',
       unmountFailed: '卸载失败',
       unmountDesc: '在某些系统中，需要在远程主机中手动弹出后再卸载镜像。',
+      checksum: '校验和',
+      checksumFailed: '计算校验和失败，请重试。',
       refresh: '刷新镜像列表',
       download: '下载镜像',
       attention: '注意',
@@ -356,6 +359,14 @@ const zh = {
           600: '10分钟',
           1800: '30分钟',
           3600: '1小时'
+        },
+        scheduledScreenOff: {
+          title: '定时熄屏',
+          description: '在指定时间段内关闭 Desk 屏幕',
+          start: '开始',
+          end: '结束',
+          invalidRange: '开始时间和结束时间不能相同。',
+          saveFailed: '无法保存定时熄屏设置。'
         },
         wifi: {
           title: 'Wi-Fi',

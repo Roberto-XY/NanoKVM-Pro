@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import { useAtomValue } from 'jotai';
 
 import * as api from '@/api/stream.ts';
+import { getVideoTransformStyle } from '@/lib/video-transform.ts';
 import { mouseStyleAtom } from '@/jotai/mouse';
 import { videoParametersAtom } from '@/jotai/screen.ts';
 
@@ -62,10 +63,10 @@ export const H264Direct = () => {
         id="screen"
         ref={canvasRef}
         className={clsx(
-          'block min-h-[50vh] min-w-[50vw] max-w-full select-none object-scale-down',
+          'block min-h-[50vh] min-w-[50vw] max-w-full select-none object-contain',
           mouseStyle
         )}
-        style={{ transform: `translate(${panX}px, ${panY}px) scale(${videoParameters.scale})` }}
+        style={getVideoTransformStyle(videoParameters.scale, videoParameters.rotation, panX, panY)}
       ></canvas>
     </div>
   );

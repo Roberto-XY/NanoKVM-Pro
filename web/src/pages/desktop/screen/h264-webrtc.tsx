@@ -5,6 +5,7 @@ import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 
 import * as api from '@/api/stream.ts';
 import { VideoStatus } from '@/types';
+import { getVideoRotationStyle, getVideoSizeStyle } from '@/lib/video-transform.ts';
 import { microphoneEnabledAtom } from '@/jotai/audio.ts';
 import { mouseStyleAtom } from '@/jotai/mouse.ts';
 import { videoParametersAtom, videoStatusAtom, videoVolumeAtom } from '@/jotai/screen.ts';
@@ -377,25 +378,31 @@ export const H264Webrtc = () => {
         </div>
       )}
 
-      <video
-        id="screen"
-        ref={videoRef}
-        className={clsx(
-          'block max-h-full min-h-[50vh] min-w-[50vw] max-w-full select-none object-scale-down',
-          isPlaying ? 'opacity-100' : 'opacity-0',
-          mouseStyle
-        )}
-        style={{ transform: `translate(${panX}px, ${panY}px) scale(${videoParameters.scale})` }}
-        muted
-        autoPlay
-        playsInline
-        controls={false}
-        onPlaying={() => setIsLoading(false)}
-        onClick={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-        }}
-      />
+      {/* Keep transforms off the hardware-decoded video layer to avoid blank quarter turns. */}
+      <div
+        className="flex"
+        style={getVideoRotationStyle(videoParameters.scale, videoParameters.rotation, panX, panY)}
+      >
+        <video
+          id="screen"
+          ref={videoRef}
+          className={clsx(
+            'block max-h-full min-h-[50vh] min-w-[50vw] max-w-full select-none object-contain',
+            isPlaying ? 'opacity-100' : 'opacity-0',
+            mouseStyle
+          )}
+          style={getVideoSizeStyle(videoParameters.rotation)}
+          muted
+          autoPlay
+          playsInline
+          controls={false}
+          onPlaying={() => setIsLoading(false)}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
+        />
+      </div>
 
       <audio ref={audioRef} muted autoPlay playsInline />
     </div>

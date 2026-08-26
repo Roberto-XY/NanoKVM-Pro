@@ -4,6 +4,7 @@ import { useAtomValue } from 'jotai';
 
 import MonitorXIcon from '@/assets/images/monitor-x.svg';
 import { getBaseUrl } from '@/lib/service.ts';
+import { getVideoTransformStyle } from '@/lib/video-transform.ts';
 import { mouseStyleAtom } from '@/jotai/mouse.ts';
 import { videoParametersAtom } from '@/jotai/screen.ts';
 
@@ -19,10 +20,10 @@ export const Mjpeg = () => {
       <Image
         id="screen"
         className={clsx(
-          'block max-h-full min-h-[50vh] min-w-[50vw] select-none object-scale-down',
+          'block max-h-full min-h-[50vh] min-w-[50vw] select-none object-contain',
           mouseStyle
         )}
-        style={{ transform: `translate(${panX}px, ${panY}px) scale(${videoParameters.scale})` }}
+        style={getVideoTransformStyle(videoParameters.scale, videoParameters.rotation, panX, panY)}
         src={`${getBaseUrl('http')}/api/stream/mjpeg`}
         fallback={MonitorXIcon}
         preview={false}
