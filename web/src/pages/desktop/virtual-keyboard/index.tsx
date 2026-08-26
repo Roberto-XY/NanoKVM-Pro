@@ -3,7 +3,7 @@ import { AppleOutlined, WindowsOutlined } from '@ant-design/icons';
 import clsx from 'clsx';
 import { useAtom } from 'jotai';
 import { XIcon } from 'lucide-react';
-import Keyboard, { KeyboardButtonTheme } from 'react-simple-keyboard';
+import RawKeyboard, { KeyboardButtonTheme } from 'react-simple-keyboard';
 
 import 'react-simple-keyboard/build/css/index.css';
 import '@/assets/styles/keyboard.css';
@@ -24,6 +24,10 @@ import {
   modifierKeys,
   specialKeyMap
 } from './virtual-keys.ts';
+
+// react-simple-keyboard's UMD build isn't unwrapped by Vite's CJS interop,
+// so the default import resolves to the module namespace instead of the component.
+const Keyboard = (RawKeyboard as unknown as { default?: typeof RawKeyboard }).default ?? RawKeyboard;
 
 export const VirtualKeyboard = () => {
   const showControlPad = useMediaQuery({ minWidth: 600 });
