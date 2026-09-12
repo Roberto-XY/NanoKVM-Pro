@@ -3,7 +3,7 @@ import { AppleOutlined, WindowsOutlined } from '@ant-design/icons';
 import clsx from 'clsx';
 import { useAtom } from 'jotai';
 import { XIcon } from 'lucide-react';
-import RawKeyboard, { KeyboardButtonTheme } from 'react-simple-keyboard';
+import { KeyboardReact as Keyboard, KeyboardButtonTheme } from 'react-simple-keyboard';
 
 import 'react-simple-keyboard/build/css/index.css';
 import '@/assets/styles/keyboard.css';
@@ -24,10 +24,6 @@ import {
   modifierKeys,
   specialKeyMap
 } from './virtual-keys.ts';
-
-// react-simple-keyboard's UMD build isn't unwrapped by Vite's CJS interop,
-// so the default import resolves to the module namespace instead of the component.
-const Keyboard = (RawKeyboard as unknown as { default?: typeof RawKeyboard }).default ?? RawKeyboard;
 
 export const VirtualKeyboard = () => {
   const showControlPad = useMediaQuery({ minWidth: 600 });
@@ -201,75 +197,80 @@ export const VirtualKeyboard = () => {
   }
 
   return (
-    <div className={clsx('w-full overflow-hidden bg-white shadow-[0_-2px_8px_rgba(0,0,0,0.12)]', !isKeyboardOpen && 'hidden')}>
+    <div
+      className={clsx(
+        'w-full overflow-hidden bg-white shadow-[0_-2px_8px_rgba(0,0,0,0.12)]',
+        !isKeyboardOpen && 'hidden'
+      )}
+    >
       <div className="mx-auto w-full max-w-[820px]">
         <div className="flex items-center justify-between px-3 py-2">
-              <ConfigProvider
-                theme={{
-                  algorithm: theme.defaultAlgorithm
-                }}
-              >
-                <div className="flex items-center space-x-5">
-                  <Select
-                    size="small"
-                    style={{ minWidth: 90 }}
-                    defaultValue={keyboardLanguage}
-                    options={languages}
-                    onChange={selectLanguage}
-                  />
+          <ConfigProvider
+            theme={{
+              algorithm: theme.defaultAlgorithm
+            }}
+          >
+            <div className="flex items-center space-x-5">
+              <Select
+                size="small"
+                style={{ minWidth: 90 }}
+                defaultValue={keyboardLanguage}
+                options={languages}
+                onChange={selectLanguage}
+              />
 
-                  {keyboardLanguage === 'en' && (
-                    <Segmented
-                      size="small"
-                      options={systems}
-                      value={keyboardSystem}
-                      onChange={selectSystem}
-                    />
-                  )}
-                </div>
-              </ConfigProvider>
-
-              <div className="flex w-[100px] items-center justify-end">
-                <div
-                  className="flex h-[20px] w-[20px] cursor-pointer items-center justify-center rounded text-neutral-600 hover:bg-neutral-300 hover:text-white"
-                  onClick={() => setIsKeyboardOpen(false)}
-                >
-                  <XIcon size={18} />
-                </div>
-              </div>
+              {keyboardLanguage === 'en' && (
+                <Segmented
+                  size="small"
+                  options={systems}
+                  value={keyboardSystem}
+                  onChange={selectSystem}
+                />
+              )}
             </div>
+          </ConfigProvider>
 
-          <div className="h-px flex-shrink-0 border-b bg-neutral-300" />
-
-          <div className="keyboardContainer w-full">
-            {/* main keyboard */}
-            <Keyboard
-              buttonTheme={getButtonTheme()}
-              keyboardRef={(r) => (keyboardRef.current = r)}
-              onKeyPress={onKeyPress}
-              onKeyReleased={onKeyReleased}
-              layoutName={keyboardLayout}
-              {...keyboardOptions}
-            />
-
-            {/* control keyboard */}
-            {showControlPad && (
-              <div className="controlArrows">
-                <Keyboard
-                  onKeyPress={onKeyPress}
-                  onKeyReleased={onKeyReleased}
-                  {...keyboardControlPadOptions}
-                />
-
-                <Keyboard
-                  onKeyPress={onKeyPress}
-                  onKeyReleased={onKeyReleased}
-                  {...keyboardArrowsOptions}
-                />
-              </div>
-            )}
+          <div className="flex w-[100px] items-center justify-end">
+            <div
+              className="flex h-[20px] w-[20px] cursor-pointer items-center justify-center rounded text-neutral-600 hover:bg-neutral-300 hover:text-white"
+              onClick={() => setIsKeyboardOpen(false)}
+            >
+              <XIcon size={18} />
+            </div>
           </div>
         </div>
+
+        <div className="h-px flex-shrink-0 border-b bg-neutral-300" />
+
+        <div className="keyboardContainer w-full">
+          {/* main keyboard */}
+          <Keyboard
+            buttonTheme={getButtonTheme()}
+            keyboardRef={(r) => (keyboardRef.current = r)}
+            onKeyPress={onKeyPress}
+            onKeyReleased={onKeyReleased}
+            layoutName={keyboardLayout}
+            {...keyboardOptions}
+          />
+
+          {/* control keyboard */}
+          {showControlPad && (
+            <div className="controlArrows">
+              <Keyboard
+                onKeyPress={onKeyPress}
+                onKeyReleased={onKeyReleased}
+                {...keyboardControlPadOptions}
+              />
+
+              <Keyboard
+                onKeyPress={onKeyPress}
+                onKeyReleased={onKeyReleased}
+                {...keyboardArrowsOptions}
+              />
+            </div>
+          )}
+        </div>
       </div>
+    </div>
   );
 };
